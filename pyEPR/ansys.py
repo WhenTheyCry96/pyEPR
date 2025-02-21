@@ -2816,6 +2816,16 @@ class HfssModeler(COMWrapper):
         self._boundaries.AssignPerfectE(
             ["NAME:" + name, "Objects:=", obj, "InfGroundPlane:=", False]
         )
+        
+    def assign_impedance(self, Rs: np.array, Xs: np.array, obj: List[str], name: str = "Imped"):
+        """
+        Assign a boundary condition to a list of objects. 
+
+        Arg:
+            objs (List[str]): Takes a name of an object or a list of object names.
+            name(str): If `name` is not specified `Imped` is appended to object name for the name.
+        """
+        #TODO, FIXME, should be able to assign impedance for an eigenmode and drivenmode simulation
 
     def _make_lumped_rlc(self, r, l, c, start, end, obj_arr, name="LumpRLC"):
         name = increment_name(name, self._boundaries.GetBoundaries())
