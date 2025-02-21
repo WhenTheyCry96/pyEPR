@@ -731,7 +731,7 @@ class HfssDesign(COMWrapper):
 
         if self.solution_type == "Eigenmode":
             return HfssEMSetup(self, name)
-        elif self.solution_type == "DrivenModal":
+        elif self.solution_type == "DrivenModal" or self.solution_type == "HFSS Hybrid Modal Network":
             return HfssDMSetup(self, name)
         elif self.solution_type == "DrivenTerminal":
             return HfssDTSetup(self, name)

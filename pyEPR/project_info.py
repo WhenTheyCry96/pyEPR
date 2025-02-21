@@ -346,7 +346,7 @@ class ProjectInfo(object):
                     if self.design.solution_type == "Eigenmode":
                         logger.warning("\tCreating eigenmode default setup.")
                         setup = self.design.create_em_setup()
-                    elif self.design.solution_type == "DrivenModal":
+                    elif self.design.solution_type == "DrivenModal" or self.solution_type == "HFSS Hybrid Modal Network":
                         logger.warning("\tCreating driven modal default setup.")
                         setup = self.design.create_dm_setup()
                     elif self.design.solution_type == "DrivenTerminal":

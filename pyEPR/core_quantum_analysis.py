@@ -6,6 +6,7 @@ Contains code that works on the analysis after hfss, ansys, etc. These can now b
 Copyright Zlatko Minev, Zaki Leghtas, and the pyEPR team
 2015, 2016, 2017, 2018, 2019, 2020
 """
+
 # pylint: disable=invalid-name
 # todo remove this pylint hack later
 
@@ -636,6 +637,8 @@ class QuantumAnalysis(object):
         variation: str,
         cos_trunc: int = None,
         fock_trunc: int = None,
+        flux: float = None,
+        basis: str = "std",
         print_result: bool = True,
         junctions: List = None,
         modes: List = None,
@@ -690,9 +693,10 @@ class QuantumAnalysis(object):
 
         # reduce matrices to only include certain modes/junctions
         if junctions is not None:
-            Ljs = Ljs[
-                junctions,
-            ]
+            if print_result:
+                print(Ljs)
+                print(junctions)
+            Ljs = Ljs[junctions,]
             PJ = PJ[:, junctions]
             SJ = SJ[:, junctions]
             EJ = EJ[:, junctions][junctions, :]
@@ -700,10 +704,11 @@ class QuantumAnalysis(object):
             PJ_cap = PJ_cap[:, junctions]
 
         if modes is not None:
-            PJ = PJ[modes, :]
-            SJ = SJ[modes, :]
-            Om = Om[modes, :][:, modes]
-            PHI_zpf = PHI_zpf[modes, :]
+            freqs_hfss = freqs_hfss[range(len(self.modes[variation])),]
+            PJ = PJ[range(len(modes)), :]
+            SJ = SJ[range(len(modes)), :]
+            Om = Om[range(len(modes)), :][:, range(len(modes))]
+            PHI_zpf = PHI_zpf[range(len(modes)), :]
             PJ_cap = PJ_cap[:, junctions]
 
         # Analytic 4-th order
@@ -712,11 +717,19 @@ class QuantumAnalysis(object):
             np.diag(Om) - 0.5 * np.ndarray.flatten(np.array(CHI_O1.sum(1))) / 1000.0
         )  # 1st order PT expect freq to be dressed down by alpha
         CHI_O1 = divide_diagonal_by_2(CHI_O1)  # Make the diagonals alpha
-
+        CHI_O1 = -1*CHI_O1 # flip the sign so that the down-frequency shift becomes negative, vice versa
+        
         # Numerical diag
         if cos_trunc is not None:
-            f1_ND, CHI_ND = epr_numerical_diagonalization(
-                freqs_hfss, Ljs, PHI_zpf, cos_trunc=cos_trunc, fock_trunc=fock_trunc
+            f1_ND, CHI_ND, Hamiltonian = epr_numerical_diagonalization(
+                freqs_hfss,
+                Ljs,
+                PHI_zpf,
+                cos_trunc=cos_trunc,
+                fock_trunc=fock_trunc,
+                flux=flux,
+                basis=basis,
+                return_H=True,
             )
         else:
             f1_ND, CHI_ND = None, None
@@ -729,6 +742,7 @@ class QuantumAnalysis(object):
         result["f_ND"] = pd.Series(f1_ND) * 1e-6  # MHz
         result["chi_O1"] = pd.DataFrame(CHI_O1)
         result["chi_ND"] = pd.DataFrame(CHI_ND)  # why dataframe?
+        result["Hamiltonian"] = Hamiltonian
         result["ZPF"] = PHI_zpf
         result["Pm_normed"] = PJ
         try:
@@ -767,6 +781,7 @@ class QuantumAnalysis(object):
 
         result["fock_trunc"] = fock_trunc
         result["cos_trunc"] = cos_trunc
+        result["flux"] = flux
 
         self.results[variation] = result
         self.results.save()
